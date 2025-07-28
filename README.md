@@ -15,7 +15,7 @@ A Python-based conversational AI system that combines real-time audio processing
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.12 or higher
 - API keys for:
   - OpenAI
   - Google Gemini
@@ -137,11 +137,9 @@ python source/examples/test_new_agent_creation.py
 - **Improved Error Handling**: Add comprehensive error handling and recovery mechanisms
 - **Performance Optimization**: Optimize async operations and reduce blocking calls
 
-### Code Quality
+### Code 
 
-- **Type Safety**: Add comprehensive type hints throughout the codebase
-- **Testing**: Implement proper unit and integration test suites
-- **Documentation**: Expand inline documentation and API documentation
+- **Testing**
 - **Configuration Management**: Improve configuration validation and management
 - **Logging**: Enhance logging with structured logging and better error tracking
 
@@ -164,7 +162,6 @@ coding_challange/
 │   ├── cached_vector_store/ # Vector storage
 │   ├── chat/              # Message processing
 │   ├── agents/            # Agent implementations
-│   └── pydantic_models/   # Data models
 ├── resources/
 │   ├── templates/         # HTML templates
 │   ├── static/           # CSS/JS assets
@@ -195,4 +192,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Note**: This is an active development project. The architecture is being continuously improved with focus on removing global state dependencies and implementing better agent coordination patterns.
+**Note**: This is an active development project. The architecture is being continuously updated
