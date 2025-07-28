@@ -79,4 +79,4 @@ def config_to_env(config: Config):
 config = load_config()
 
 uploads_dir = path_persistence_dir / "uploads"
-quick_access_info = uploads_dir / "quick_access_context.txt"
+path_quick_access_info = uploads_dir / "quick_access_context.txt"
