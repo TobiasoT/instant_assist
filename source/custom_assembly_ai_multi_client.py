@@ -18,9 +18,10 @@ from assemblyai.streaming.v3 import (
     StreamingParameters,
 )
 
+from source.chat.message import Message
+from source.chat.word import AudioStream
 from source.dev_logger import debug
 from source.locations_and_config import   config
-from source.pydantic_models.message import Message, AudioStream
 
 
 @dataclass
