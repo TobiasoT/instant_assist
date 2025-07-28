@@ -32,6 +32,7 @@ class AgentRater:
 		while True:
 			await self.latest_unprocessed_message_event.wait()
 			self.latest_unprocessed_message_event.clear()
+
 			debug(f"Creating new agents for message: {self.latest_unprocessed_message.content}")
 			await self.rate_agents(self.latest_unprocessed_message)
 		

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TypeVar, List
 
 from source.custom_assembly_ai_multi_client import global_custom_assembly_ai_multi_client_factory
-from source.global_instances import agent_tasks_factory, agent_rater
+from source.global_instances.agent_instances import agent_tasks_factory, agent_rater
 
 T = TypeVar("T")
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import traceback
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from langchain_core.output_parsers import PydanticOutputParser
 from langgraph.prebuilt import create_react_agent
@@ -10,11 +10,12 @@ from langgraph.prebuilt import create_react_agent
 from source.agentic_tasks.agent_task_wrapper import AgenticTaskWrapper, AgentTaskResult
 from source.agentic_tasks.task_status import TaskStatus
 from source.agents.tools.local_files_rag_tool import LocalFilesRAGTool # unused here but kept if you plan to use later
-from source.chat.message import Message
+if TYPE_CHECKING:
+    from source.chat.message import Message
 from source.dev_logger import debug, measure_time
-from source.global_instances import agents_config
+from source.global_instances.agents_config import agents_config
 from source.global_models import cached_embeddings, default_cheapest_model
-from source.locations_and_config import uploads_dir
+from source.locations_and_config import uploads_dir, path_quick_access_info
 
 
 class DefaultAgent:
@@ -84,10 +85,10 @@ class DefaultAgent:
         prompt += "\n</chat>\n\n"
 
         # Quick access info (if present)
-        if quick_access_info.exists():
+        if path_quick_access_info.exists():
             prompt += "Context from quick access info:\n"
             prompt += "<quick_access_info>\n"
-            prompt += quick_access_info.read_text()
+            prompt += path_quick_access_info.read_text()
             prompt += "\n</quick_access_info>\n\n"
 
         # Current task
@@ -121,10 +122,10 @@ class DefaultAgent:
         )
         prompt += "</chat>\n"
 
-        if quick_access_info.exists():
+        if path_quick_access_info.exists():
             prompt += "Context from quick access info:\n"
             prompt += "<quick_access_info>"
-            prompt += quick_access_info.read_text()
+            prompt += path_quick_access_info.read_text()
             prompt += "</quick_access_info>\n"
 
         prompt += "Context from current task:\n"
