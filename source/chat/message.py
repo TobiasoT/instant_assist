@@ -87,7 +87,7 @@ class Message(BaseModel):
 		return await self.extraction.set_by_key(key = summary.config.config_id(), result = summary.summary, timestamp = timestamp)
 		
 	def get_summary(self, config: SummaryOfPreviousChatConfig)  -> Optional[SummaryOfPreviousChat]:
-		"""
+		""""""
 		extraction = self.extraction.get_by_key(config.config_id())
 		if extraction and extraction.result:
 			return SummaryOfPreviousChat(summary = extraction.result, config = config)

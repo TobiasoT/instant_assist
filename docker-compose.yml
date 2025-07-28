@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  ai-app:
+    build: .
+    ports:
+      - "8000:8000"  # Main web application
+      - "8080:8080"  # LiveKit server
+    environment:
+      - LIVEKIT_WS_URL=${LIVEKIT_WS_URL}
+      - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      # Persistent cache directories
+      - ai_embeddings_cache:/app/data/embeddings_cache
+      - ai_category_queries:/app/data/category_queries
+      - ai_faiss_idx:/app/source/cached_vector_store/muell/faiss_idx
+      - ai_persistence:/app/data/persistence
+      - ai_query_cache:/app/source/cached_vector_store/muell
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  ai_embeddings_cache:
+    driver: local
+  ai_category_queries:
+    driver: local
+  ai_faiss_idx:
+    driver: local
+  ai_persistence:
+    driver: local
+  ai_query_cache:
+    driver: local
