@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Assist</title>
+    
+    <!-- Use same styling as other pages -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/agent.css') }}"/>
+    
+    <style>
+        /* Override some agent.css for main page layout */
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font: 16px/1.6 "Inter", system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .main-container {
+            width: min(1400px, 96vw);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: var(--text);
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            font-weight: 300;
+            text-align: center;
+        }
+        
+        .links-section {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .links-section h2 {
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            font-weight: 400;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+        
+        .nav-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(54, 131, 246, 0.4);
+        }
+        
+        .section-divider {
+            border-top: 1px solid var(--border);
+            margin: 2rem 0;
+        }
+        
+        .upload-section, .prompt-section {
+            margin-bottom: 2rem;
+        }
+        
+        .upload-section h2, .prompt-section h2 {
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            font-weight: 400;
+        }
+        
+        .upload-form {
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .file-input {
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            cursor: pointer;
+        }
+        
+        .file-input-button {
+            display: inline-block;
+            padding: 10px 14px;
+            background-color: #48bb78;
+            color: white;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border: 1px solid #48bb78;
+        }
+        
+        .file-input-button:hover {
+            background-color: #38a169;
+            transform: translateY(-1px);
+        }
+        
+        .upload-button {
+            padding: 10px 14px;
+            background: #48bb78;
+            color: white;
+            border: 1px solid #48bb78;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-button:hover {
+            background-color: #38a169;
+            transform: translateY(-1px);
+        }
+        
+        .upload-button:disabled {
+            background: var(--muted);
+            border-color: var(--muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .file-list {
+            margin-top: 1rem;
+            text-align: center;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary-light);
+            border-radius: 4px;
+            margin: 0.25rem;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+        
+        .message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+        }
+        
+        .message.success {
+            background-color: #f0fff4;
+            color: #38a169;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .message.error {
+            background-color: #fed7d7;
+            color: #e53e3e;
+            border: 1px solid #feb2b2;
+        }
+        
+        .prompt-response {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--primary-light);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .main-container {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .prompt-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .upload-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>Instant Assist</h1>
+        
+        <div class="links-section">
+            <h2>Navigate to Applications</h2>
+            <div class="nav-links">
+                <a href="/livekit" class="nav-link" target="_blank">LiveKit Chat</a>
+                <a href="/summary_board" class="nav-link" target="_blank">Summary Board</a>
+            </div>
+        </div>
+        
+        <div class="section-divider"></div>
+        
+        <!-- Prompt UI section matching summary board -->
+        <section class="prompt-ui" aria-label="Prompt">
+            <div class="prompt-header">
+                <h2>Process Prompt</h2>
+            </div>
+
+            <div class="prompt-row">
+                <label for="promptPreset">Preset</label>
+                <select id="promptPreset" class="prompt-select"></select>
+                <button id="clearPromptBtn" class="btn btn-secondary">Clear</button>
+                <button id="sendPromptBtn" class="btn btn-primary">Send</button>
+            </div>
+
+            <textarea id="promptText" class="prompt-text"
+                      placeholder="Type a prompt… (Ctrl/Cmd+Enter to send)"></textarea>
+            <div class="prompt-footer">
+                <span id="sendStatus" class="status" aria-live="polite"></span>
+            </div>
+        </section>
+        
+        <div id="promptResponse"></div>
+        
+        <div class="section-divider"></div>
+        
+        <div class="upload-section">
+            <h2>Upload Files</h2>
+            <form class="upload-form" id="uploadForm" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" multiple webkitdirectory>
+                    <label for="fileInput" class="file-input-button">
+                        Choose Directory
+                    </label>
+                </div>
+                
+                <div class="file-input-wrapper">
+                    <input type="file" id="filesInput" class="file-input" multiple>
+                    <label for="filesInput" class="file-input-button">
+                        Choose Files
+                    </label>
+                </div>
+                
+                <button type="submit" class="upload-button" id="uploadButton" disabled>
+                    Upload Selected
+                </button>
+            </form>
+            
+            <div id="fileList" class="file-list"></div>
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <!-- Server-injected presets -->
+    <script>window.__INITIAL_PROMPTS__ = {{ predefined_prompts | tojson }};</script>
+
+    <script>
+        // File upload functionality
+        const fileInput = document.getElementById('fileInput');
+        const filesInput = document.getElementById('filesInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const fileList = document.getElementById('fileList');
+        const message = document.getElementById('message');
+        const uploadForm = document.getElementById('uploadForm');
+        
+        // Prompt functionality - matching summary board
+        const promptPreset = document.getElementById('promptPreset');
+        const promptText = document.getElementById('promptText');
+        const clearPromptBtn = document.getElementById('clearPromptBtn');
+        const sendPromptBtn = document.getElementById('sendPromptBtn');
+        const sendStatus = document.getElementById('sendStatus');
+        const promptResponse = document.getElementById('promptResponse');
+        
+        let selectedFiles = [];
+        
+        // Initialize preset dropdown
+        function initializePrompts() {
+            const prompts = window.__INITIAL_PROMPTS__ || [];
+            
+            // Clear existing options
+            promptPreset.innerHTML = '';
+            
+            // Add empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = 'Choose preset...';
+            promptPreset.appendChild(emptyOption);
+            
+            // Add predefined prompts
+            prompts.forEach(prompt => {
+                const option = document.createElement('option');
+                option.value = prompt;
+                option.textContent = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+                promptPreset.appendChild(option);
+            });
+        }
+        
+        // Handle preset selection
+        promptPreset.addEventListener('change', () => {
+            if (promptPreset.value) {
+                promptText.value = promptPreset.value;
+            }
+        });
+        
+        // Handle clear button
+        clearPromptBtn.addEventListener('click', () => {
+            promptText.value = '';
+            promptPreset.value = '';
+            promptResponse.innerHTML = '';
+            sendStatus.textContent = '';
+        });
+        
+        function updateFileList() {
+            fileList.innerHTML = '';
+            
+            if (selectedFiles.length > 0) {
+                selectedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                    fileList.appendChild(fileItem);
+                });
+                uploadButton.disabled = false;
+            } else {
+                uploadButton.disabled = true;
+            }
+        }
+        
+        function handleFileSelection(files) {
+            selectedFiles = Array.from(files);
+            updateFileList();
+        }
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelection(e.target.files);
+        });
+        
+        filesInput.addEventListener('change', (e) => {
+            handleFileSelection(e.target.files);
+        });
+        
+        // Upload form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (selectedFiles.length === 0) return;
+            
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            uploadButton.disabled = true;
+            uploadButton.textContent = 'Uploading...';
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    message.innerHTML = `<div class="message success">Successfully uploaded ${result.files.length} files</div>`;
+                    selectedFiles = [];
+                    updateFileList();
+                    fileInput.value = '';
+                    filesInput.value = '';
+                } else {
+                    message.innerHTML = `<div class="message error">Upload failed: ${result.detail || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                message.innerHTML = `<div class="message error">Upload failed: ${error.message}</div>`;
+            } finally {
+                uploadButton.disabled = selectedFiles.length === 0;
+                uploadButton.textContent = 'Upload Selected';
+            }
+        });
+        
+        // Prompt form submission
+        sendPromptBtn.addEventListener('click', async () => {
+            const text = promptText.value.trim();
+            if (!text) return;
+            
+            sendPromptBtn.disabled = true;
+            sendPromptBtn.textContent = 'Processing...';
+            sendStatus.textContent = 'Sending prompt...';
+            
+            try {
+                const response = await fetch('/process_prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    promptResponse.innerHTML = `<div class="prompt-response">${result.response}</div>`;
+                    sendStatus.textContent = 'Prompt processed successfully';
+                } else {
+                    promptResponse.innerHTML = `<div class="message error">Processing failed: ${result.detail || 'Unknown error'}</div>`;
+                    sendStatus.textContent = 'Processing failed';
+                }
+            } catch (error) {
+                promptResponse.innerHTML = `<div class="message error">Processing failed: ${error.message}</div>`;
+                sendStatus.textContent = 'Processing failed';
+            } finally {
+                sendPromptBtn.disabled = false;
+                sendPromptBtn.textContent = 'Send';
+                
+                // Clear status after 3 seconds
+                setTimeout(() => {
+                    sendStatus.textContent = '';
+                }, 3000);
+            }
+        });
+        
+        // Keyboard shortcut for prompt (Ctrl/Cmd+Enter)
+        promptText.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                sendPromptBtn.click();
+            }
+        });
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            initializePrompts();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+/* ======================================================
+   Agent board – full style sheet
+   ====================================================== */
+
+:root{
+  /* colours & spacing */
+  --bg:#f3f6fb; --card:#fff; --primary:#3683f6; --primary-light:#e9f1ff;
+  --text:#20262e; --muted:#64748b; --border:#d6dce7;
+  /* sizes */
+  --radius:12px; --shadow:0 3px 14px rgba(0,0,0,.06);
+  --dot-gap:20px;           /* horizontal space between dot and text */
+  --dot-size:1em;           /* dot is as tall as capital letters */
+}
+*{box-sizing:border-box}
+body{
+  margin:0;padding:0;background:var(--bg);color:var(--text);
+  font:16px/1.6 "Inter",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;
+}
+#root{width:min(1400px,96vw)}
+
+/* ==================== Empty State ==================== */
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  padding: 2rem;
+  width: min(1400px,96vw);
+}
+
+.empty-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.empty-content h3 {
+  color: #666;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.empty-content p {
+  color: #888;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.btn-large {
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Floating “show prompt” button ───────────────────── */
+.show-prompt-btn{
+  position:fixed;top:16px;right:16px;z-index:2000;
+  padding:8px 14px;background:var(--primary);color:#fff;font-weight:600;
+  border:none;border-radius:8px;box-shadow:var(--shadow);cursor:pointer;
+}
+.show-prompt-btn.hidden{display:none}
+
+/* ── Prompt toolbar ─────────────────────────────────── */
+.prompt-ui{
+  width:min(1300px,96vw);background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;margin:10px 0 16px;transition:opacity .2s ease;
+}
+.prompt-ui.collapsed{display:none}
+.prompt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.prompt-header h2{margin:0;font-size:1.1rem}
+.prompt-row{display:grid;grid-template-columns:120px 1fr 130px 130px;gap:10px;align-items:center;margin-bottom:10px}
+.prompt-footer{display:flex;justify-content:flex-end}
+.prompt-row label{font-weight:600}
+.prompt-select,.prompt-text,.btn{border-radius:8px;border:1px solid var(--border);font:inherit}
+.prompt-select{padding:10px}
+.prompt-text{width:100%;max-width:1129px;min-height:90px;padding:12px;resize:vertical}
+.btn{padding:10px 14px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-danger{background:#d33;color:#fff;border-color:#d33}
+.btn-secondary{background:#fff;color:var(--text)}
+.btn[disabled]{opacity:.6;cursor:not-allowed}
+.status{font-size:.9rem;opacity:.8}
+
+/* ── Groups ─────────────────────────────────────────── */
+.group{
+  background:var(--card);border:1px solid var(--border);
+  border-left:4px solid var(--primary-light);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  margin-bottom:22px;overflow:hidden;
+}
+.group-header{
+  display:flex;align-items:center;gap:.6rem;padding:12px 18px;
+  background:linear-gradient(90deg,var(--primary-light) 0%,#f9fbff 100%);
+  font-weight:600;cursor:pointer;user-select:none;
+}
+.group-header svg{fill:var(--primary);width:22px;height:22px;transition:transform .25s ease}
+.group.collapsed .group-header svg{transform:rotate(-90deg)}
+.items{padding:0}
+.items.collapsed{max-height:0;padding:0;overflow:hidden}
+
+/* ── Item (preview row + body) ───────────────────────── */
+.item{
+  display:grid;
+  grid-template-columns: calc(var(--dot-size) + var(--dot-gap)) 1fr auto;
+  grid-auto-rows:auto;
+  border-top:1px solid #eef1f7;
+}
+.item:first-child{border-top:none}
+
+/* header area (dot + text + caret) */
+.item-head{display:contents}
+.color-dot {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--primary);
+
+  /* --- tweak these two to shift the dot --- */
+  margin-left: 10px;   /* move right: increase this value */
+  margin-top: 23px;     /* move down: increase this value */
+
+  align-self: flex-start;   /* keeps vertical centering relative to text */
+  padding: 0;
+}
+
+.item-main{padding:14px 0 12px 0}
+.item-caret{padding:14px 18px 12px 0;opacity:.55;transition:transform .2s ease;align-self:center}
+.item-caret svg{width:18px;height:18px}
+.item.open .item-caret svg{transform:rotate(90deg);opacity:.85}
+
+/* title + summary */
+.item-title{
+  font-weight:700;font-size:1.06rem;line-height:1.25;margin:0 0 3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.item-summary{
+  color:var(--muted);font-size:.93rem;line-height:1.35;
+  white-space:pre-line;-webkit-box-orient:vertical;display:-webkit-box;
+  -webkit-line-clamp:3;overflow:hidden;
+}
+
+/* row hover */
+.item:hover .item-main,
+.item:hover .item-caret{background:#f6f9ff}
+
+/* expanded body spans whole width */
+.content-body{grid-column:1 / -1;padding:0 18px 16px 18px}
+.content-body.hidden{display:none}
+.content-body-inner{
+  border-left:3px solid var(--primary-light);background:#fbfcff;
+  border:1px solid #eef2f8;border-left-color:var(--primary-light);
+  padding:14px;border-radius:8px;
+}
+
+/* Markdown tweaks */
+.content-body :where(h1){font-size:1.3rem;margin:.6em 0 .35em}
+.content-body :where(h2){font-size:1.15rem;margin:.7em 0 .4em}
+.content-body :where(h3){font-size:1.05rem;margin:.7em 0 .4em}
+.content-body pre{border:1px solid #e4e8f0;border-radius:6px;background:#f8f9fb;padding:1em;margin:1em 0}
+
+/* small screens */
+@media (max-width:640px){
+  .prompt-row{grid-template-columns:1fr}
+  .item{grid-template-columns:calc(var(--dot-size) + 6px) 1fr auto}
+  .item-title{font-size:1rem}
+}

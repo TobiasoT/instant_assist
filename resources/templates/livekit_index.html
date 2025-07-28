@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>LiveKit Audio Call</title>
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.15.3/dist/livekit-client.umd.min.js"></script>
+
+  <!-- Use same styling as other pages -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/agent.css') }}"/>
+
+  <style>
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 "Inter", system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .main-container {
+      width: min(1400px, 96vw);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: var(--text);
+      margin-bottom: 2rem;
+      font-size: 2.5rem;
+      font-weight: 300;
+      text-align: center;
+    }
+
+    #controls {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      justify-content: center;
+    }
+
+    #controls input, #controls select {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font: inherit;
+      min-width: 200px;
+    }
+
+    #controls button {
+      padding: 10px 14px;
+      background: var(--primary);
+      color: white;
+      border: 1px solid var(--primary);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    #controls button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(54, 131, 246, 0.3);
+    }
+
+    audio {
+      width: 100%;
+      margin: 1rem 0;
+      border-radius: var(--radius);
+    }
+
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section h2 {
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+      font-weight: 400;
+    }
+
+    .label {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .hint {
+      font-size: 0.9rem;
+      color: var(--muted);
+      background: var(--primary-light);
+      padding: 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+    }
+
+    #welcome {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+      text-align: center;
+    }
+
+    #remote-audios {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      min-height: 100px;
+      background: var(--primary-light);
+    }
+
+    .section-divider {
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+
+    @media (max-width: 600px) {
+      .main-container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      #controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      #controls input, #controls select, #controls button {
+        min-width: auto;
+      }
+    }
+  </style>
+  <link rel="icon" href="data:," type="image/x-icon" />
+</head>
+<body>
+  <div class="main-container">
+    <h1>LiveKit Audio Call</h1>
+
+    <div class="section">
+      <div id="controls">
+        <input id="name" placeholder="Your name"/>
+        <select id="source">
+          <option value="mic" selected>Use microphone</option>
+          <option value="system">Share app/tab audio (screen share)</option>
+        </select>
+        <button id="join">Join & Publish</button>
+      </div>
+
+      <div id="welcome"></div>
+      <div id="hints" class="hint"></div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="section">
+      <div class="label">Your local monitor (muted):</div>
+      <audio id="local-audio" autoplay controls muted></audio>
+
+      <div class="label">Remote participants:</div>
+      <div id="remote-audios"></div>
+    </div>
+  </div>
+
+  <!-- Inject the WS URL from FastAPI -->
+  <script>
+    window.LIVEKIT_WS_URL = "{{ LIVEKIT_WS_URL }}";
+    if (!window.LIVEKIT_WS_URL) {
+      alert("⚠️ LIVEKIT_WS_URL is undefined! Check your TemplateResponse injection.");
+      throw new Error("Missing LIVEKIT_WS_URL");
+    }
+  </script>
+
+  <script>
+  (async () => {
+    const {
+      Room,
+      RoomEvent,
+      Track,
+      createLocalAudioTrack,
+      createLocalScreenTracks, // helper for getDisplayMedia()
+    } = window.LivekitClient;
+
+    const nameInput  = document.getElementById("name");
+    const srcSelect  = document.getElementById("source");
+    const joinBtn    = document.getElementById("join");
+    const welcomeDiv = document.getElementById("welcome");
+    const hintsDiv   = document.getElementById("hints");
+    const localAudio = document.getElementById("local-audio");
+    const remoteWrap = document.getElementById("remote-audios");
+    const WS_URL     = window.LIVEKIT_WS_URL;
+
+    let room;
+
+    const setHint = (html) => { hintsDiv.innerHTML = html; };
+
+    // Helpful hints when user switches the source selector
+    srcSelect.addEventListener("change", () => {
+      if (srcSelect.value === "system") {
+        setHint(
+          `When prompted, pick the tab/window and ensure <b>Share tab/system audio</b> is enabled.
+           This is best supported on Chrome/Chromium; Firefox may not offer system/app audio.`
+        );
+      } else {
+        setHint("");
+      }
+    });
+
+    joinBtn.addEventListener("click", async () => {
+      const identity = (nameInput.value || "guest").trim();
+      const roomName = "default-room"; // still hard-coded
+      const source   = srcSelect.value; // "mic" | "system"
+
+      try {
+        // 1) Fetch a token from your backend
+        const resp = await fetch("/livekit/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identity, room: roomName }),
+        });
+        if (!resp.ok) throw new Error(`Token fetch failed: ${resp.status}`);
+        const { token } = await resp.json();
+
+        // 2) Connect without auto-capture
+        room = new Room({ adaptiveStream: false });
+        await room.connect(WS_URL, token, { audio: false, video: false });
+        welcomeDiv.textContent = `Hi ${identity}, you’re in “${roomName}.”`;
+
+        // 3) Capture & publish depending on mode
+        if (source === "mic") {
+          // Microphone capture, with standard voice processing
+          const audioTrack = await createLocalAudioTrack({
+            name: "mic-track",
+            autoGainControl: true,
+            echoCancellation: true,
+            noiseSuppression: true,
+          });
+          // audioTrack.attach(localAudio);
+          await room.localParticipant.publishTrack(audioTrack, { name: "mic-track" });
+          setHint(`Published <b>mic-track</b>.`);
+        } else {
+          // Screen-share capture to get app/tab/system audio (where supported)
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            alert("Screen share not supported in this browser.");
+            return;
+          }
+
+          // Always creates a LocalVideoTrack and (if supported) a LocalAudioTrack.
+          // We only publish the audio track. The video track is ignored/unpublished.
+          const screenTracks = await createLocalScreenTracks({
+            audio: true,
+            video: true, // required by many browsers for the picker
+          });
+
+          const screenAudioTrack = screenTracks.find(t => t.kind === Track.Kind.Audio);
+          if (!screenAudioTrack) {
+            alert(
+              "No audio track was provided by the browser for this screen share.\n\n" +
+              "Make sure you checked 'Share tab/system audio' in the picker and try a Chrome/Chromium browser."
+            );
+            setHint(`No shareable audio track was returned by the browser.`);
+            return;
+          }
+
+          // Monitor locally (muted element prevents feedback)
+          screenAudioTrack.attach(localAudio);
+
+          // Name the publication so others can distinguish it
+          await room.localParticipant.publishTrack(screenAudioTrack, {
+            name: "shared-app-audio",
+          });
+
+          // Optional: stop or detach the LocalVideoTrack to reduce local work (we didn't publish it).
+          // Do NOT call .stop() on it if you want to keep audio flowing on some platforms.
+
+          setHint(`Published <b>shared-app-audio</b>. If participants can't hear it, re-share and ensure audio sharing is enabled.`);
+        }
+
+        // 4) Handle incoming audio tracks
+        room.on(RoomEvent.TrackSubscribed, (track, pub, participant) => {
+          if (track.kind !== Track.Kind.Audio) return;
+          const elId = `remote-${pub.trackSid}`;
+          if (!document.getElementById(elId)) {
+            const label = document.createElement("div");
+            label.className = "label";
+            // Show identity + track name if available
+            const tname = (pub && (pub.trackName || pub.metadata)) ? ` • ${pub.trackName || ""}` : "";
+            label.textContent = `🔊 ${participant.identity}${tname}`;
+            const audioEl = document.createElement("audio");
+            audioEl.id = elId;
+            audioEl.autoplay = true;
+            audioEl.controls = true;
+            remoteWrap.append(label, audioEl);
+            track.attach(audioEl);
+          }
+        });
+
+        room.on(RoomEvent.TrackUnsubscribed, (_track, pub) => {
+          const el = document.getElementById(`remote-${pub.trackSid}`);
+          if (el) el.remove();
+        });
+
+      } catch (err) {
+        console.error("❌ Join failed:", err);
+        alert("Could not join call—see console.");
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
