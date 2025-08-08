@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 AllowedTypesOfAnswers = Literal["info", "suggestion", "warning", "error", "other"]
 
 class AgentTaskResult(BaseModel):
+	more_info_needed:bool = Field(
+		default = False,
+		description = "If True, the agent needs more information to complete the task")
 	group: AllowedTypesOfAnswers = Field(
 		description = "Category of the answer; useful for filtering later."
 	)
@@ -100,8 +103,8 @@ print(generate_id("user"))
 			"title": self.title,
 			"very_short_summary_of_content":convert_markdown_to_beautiful_html(self.very_short_summary_of_content),
 			# "very_short_summary_of_content":html,
-			# "content": convert_markdown_to_beautiful_html(self.content)
-			"content": convert_markdown_to_beautiful_html(html),
+			"content": convert_markdown_to_beautiful_html(self.content),
+			# "content": convert_markdown_to_beautiful_html(),
 			"color_circle": self.rgb_to_css(0, 128, 255, 0.5),
 		}
 	
@@ -214,7 +217,9 @@ class AgenticTaskWrapper(BaseModel):
 		self.result = result
 		self.agent_pool.sort_into_relevance(self)
 		if self.callback_result_update is not None:
-			await self.callback_result_update()
+			callback_result = self.callback_result_update()
+			if asyncio.iscoroutine(callback_result):
+				await callback_result
 
 
 class ListOfAgenticTaskWrappers(BaseModel):

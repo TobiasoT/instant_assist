@@ -30,12 +30,6 @@ speed_test_gpt_4_1_mini_model= ChatOpenAI(
 	openai_api_key = openai_api_key,
 	cache = chat_cache,
 )
-# speed_test_default_human_like_model = ChatOpenAI(
-# 	model ="gpt-4.5",# "gpt-4.5-preview",
-# 	# temperature = 0.0,
-# 	openai_api_key = openai_api_key,
-# 	cache = chat_cache,
-# )
 speed_test_gemini_flash_2_5_thinking_model = ChatGoogleGenerativeAI(
 # model="gemini-2.5-flash-preview-04-17",
 model="gemini-2.5-flash",#model="gemini-2.5-flash-preview-04-17"

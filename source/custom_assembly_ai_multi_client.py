@@ -21,7 +21,6 @@ from assemblyai.streaming.v3 import (
 from source.chat.message import Message
 from source.chat.word import AudioStream
 from source.dev_logger import debug
-from source.locations_and_config import   config
 
 
 @dataclass
@@ -98,6 +97,7 @@ class CustomAssemblyAiMultiClientFactory:
                     conversation_id=self._conversation_id,
                     audio_stream=AudioStream(start_time_absolute=datetime.datetime.now()),
                 )
+                assert msg is not None, "Message must not be None"
                 self.messages_queue.put(msg)
                 debug(
                     f"[AAI][{speaker}] queued Message, queue size="
@@ -154,8 +154,3 @@ class CustomAssemblyAiMultiClientFactory:
             sentinel=sentinel,
         )
     
-global_custom_assembly_ai_multi_client_factory: CustomAssemblyAiMultiClientFactory | None = CustomAssemblyAiMultiClientFactory(
-			api_key = config.assemblyai_api_key,
-			conversation_id = "livekit-conversation",
-		)
-  

@@ -18,9 +18,9 @@ A Python-based conversational AI system that combines real-time audio processing
 - Python 3.12 or higher
 - API keys for:
   - OpenAI
-  - Google Gemini
+  - Google Gemini  
   - AssemblyAI
-  - LiveKit
+  - LiveKit (API key + secret + WS URL)
 
 ### Installation
 

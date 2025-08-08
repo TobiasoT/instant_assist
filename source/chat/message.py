@@ -124,6 +124,12 @@ class Message(BaseModel):
 		])
 		prompt += "</chat_messages_following_summary>\n"
 		return prompt
+	
+	def get_most_recent_message(self):
+		current = self
+		while current.next_message:
+			current = current.next_message
+		return current
 		
 	async def absorb_other_into_messages_stream(self, other: Message, time_distance_to_never_fusion_messages_sec: float = 5, timestamp_of_change: Optional[datetime] = None) -> None:
 		async with async_global_messages_change_lock:

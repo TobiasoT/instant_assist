@@ -46,5 +46,5 @@ class AgentsConfig(BaseModel):
 	
 	def set_assistant_instructions(self, instructions: str):
 		self.assistant_instructions = instructions
-		self.summarization_config.assistant_instructions = instructions
+		self.summarization_config.prompt = instructions
 

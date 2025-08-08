@@ -4,6 +4,7 @@ from __future__ import annotations
 import traceback
 from typing import Any, TYPE_CHECKING
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import PydanticOutputParser
 from langgraph.prebuilt import create_react_agent
 
@@ -13,7 +14,7 @@ from source.agents.tools.local_files_rag_tool import LocalFilesRAGTool # unused 
 if TYPE_CHECKING:
     from source.chat.message import Message
 from source.dev_logger import debug, measure_time
-from source.global_instances.agents_config import agents_config
+from source.global_instances.agents_config import global_agents_config
 from source.global_models import cached_embeddings, default_cheapest_model
 from source.locations_and_config import uploads_dir, path_quick_access_info
 
@@ -45,6 +46,8 @@ class DefaultAgent:
         """Heuristics to decide if the ReAct agent should run."""
         if result is None:
             return True
+        if result.more_info_needed:
+            return True
         # If your schema uses different attribute names, tweak below:
         # 1) explicit status asking for lookup
         if hasattr(result, "status") and getattr(result, "status") in {
@@ -62,6 +65,7 @@ class DefaultAgent:
         # 3) any explicit flag the model may set
         if hasattr(result, "needs_lookup") and bool(getattr(result, "needs_lookup")):
             return True
+        debug(f"QUICK RESULT AVAILABLE: {result.content if hasattr(result, 'content') else 'No content'}")
         return False
 
     def _build_context_prompt(
@@ -80,7 +84,7 @@ class DefaultAgent:
         prompt += "<chat>\n"
         prompt += messages.get_chat_context(
             minimum_number_of_messages=50,
-            config=agents_config.summarization_config,
+            config=global_agents_config.summarization_config,
         )
         prompt += "\n</chat>\n\n"
 
@@ -93,7 +97,7 @@ class DefaultAgent:
 
         # Current task
         prompt += "Current task:\n"
-        prompt += f"<query_or_task>{agentic_task_wrapper}</query_or_task>\n\n"
+        prompt += f"<query_or_task>{agentic_task_wrapper.query_or_task}</query_or_task>\n\n"
 
         # Output contract
         prompt += "Put your final answer inside <json>...</json> tags.\n"
@@ -106,7 +110,7 @@ class DefaultAgent:
     # -----------------------------
     async def quick_result(
         self, agentic_task_wrapper: AgenticTaskWrapper, messages: Message
-    ) -> AgentTaskResult:
+    ) -> AgentTaskResult|None:
         messages = self._last_message(messages)
         parser = PydanticOutputParser(pydantic_object=AgentTaskResult)
 
@@ -118,7 +122,7 @@ class DefaultAgent:
         prompt += "<chat>"
         prompt += messages.get_chat_context(
             minimum_number_of_messages=50,
-            config=agents_config.summarization_config,
+            config=global_agents_config.summarization_config,
         )
         prompt += "</chat>\n"
 
@@ -129,16 +133,21 @@ class DefaultAgent:
             prompt += "</quick_access_info>\n"
 
         prompt += "Context from current task:\n"
-        prompt += f"You're given the following query or task: <query_or_task>{agentic_task_wrapper}</query_or_task>.\n"
+        prompt += f"You're given the following query or task: <query_or_task>{agentic_task_wrapper.query_or_task}</query_or_task>.\n"
         prompt += "Put your answer in <json>...</json> tags.\n"
         prompt += "If you think you need to look something up, answer with empty <json></json>.\n"
         prompt += "Your answer must match this schema:\n"
         prompt += parser.get_format_instructions() + "\n"
 
         result = await self.category_query_llm.ainvoke(prompt)
-        content: str = result.content.strip()
-        json_str = content.split("<json>")[-1].split("</json>")[0].strip()
-        parsed = parser.parse(json_str)
+        try:
+            content: str = result.content.strip()
+            json_str = content.split("<json>")[-1].split("</json>")[0].strip()
+            if len(json_str.strip()) == 0:
+                return None
+            parsed = parser.parse(json_str)
+        except OutputParserException as e:
+            return None
         await agentic_task_wrapper.set_result(parsed)
         return parsed
 
@@ -160,7 +169,8 @@ class DefaultAgent:
             prompt=(
                 "You are a precise ReAct agent.\n"
                 "Use tools when they can materially improve accuracy.\n"
-                "Prefer the LocalFilesRAG tool for any query that might be answered from local documents.\n"
+                "Prefer the LocalFilesRAG tool for any query that might be answered from local documents. "
+                "But of course you may also answer yourself in case the tools don't provide answers and you are pretty sure."
                 "When you produce the final answer, it MUST be enclosed in <json>...</json> and conform to the provided schema.\n"
                 "Include bracketed citations like [1], [2] when drawing on local files."
             ),
@@ -183,16 +193,19 @@ class DefaultAgent:
         try:
             json_str = final_text.split("<json>")[-1].split("</json>")[0].strip()
             parsed = parser.parse(json_str)
+            await agentic_task_wrapper.set_result(parsed)
         except Exception as e:
             # Fall back to a minimal error result if parsing fails
-            debug("Agent parsing failed: %s", e)
+            
+            debug(f"Agent parsing failed: {e}\n{final_text}")
             parsed = AgentTaskResult(
-                status=getattr(TaskStatus, "FAILED", "FAILED"),
-                content="Agent produced an unparsable response.",
-                error=str(e),
+                group = "error",
+                content=f"Error parsing agent response: {final_text}",
+                title = "Agent Error",
+                very_short_summary_of_content= f"Error: {e}",
             )
+            await agentic_task_wrapper.set_result(parsed)
 
-        await agentic_task_wrapper.set_result(parsed)
         return parsed
 
     # -----------------------------
@@ -203,7 +216,7 @@ class DefaultAgent:
             quick = await self.quick_result(
                 agentic_task_wrapper, agentic_task_wrapper.message
             )
-            if self._needs_agent(quick):
+            if quick is None or self._needs_agent(quick):
                 debug("Escalating to agentic path (needs lookup or empty result).")
                 return await self.agentic_result(
                     agentic_task_wrapper, agentic_task_wrapper.message

@@ -20,7 +20,7 @@ class AgentRater:
 		self.config: AgentsConfig = config
 		self.latest_unprocessed_message: Message | None = None
 		self.latest_unprocessed_message_event: asyncio.Event = asyncio.Event()
-		
+		self.latest_unprocessed_message_event.clear()
 		
 	def set_latest_unprocessed_message(self, message: Message):
 		"""
@@ -28,6 +28,8 @@ class AgentRater:
 		"""
 		self.latest_unprocessed_message = message
 		self.latest_unprocessed_message_event.set()
+		debug(message.content_as_string)
+		
 	async def run_in_loop(self):
 		while True:
 			await self.latest_unprocessed_message_event.wait()
@@ -89,7 +91,8 @@ class AgentRater:
 		prompt += (f"{[(str(index)+ ": " + task.query_or_task) for index, task in enumerate(active_agents)] if active_agents else []}\n")
 		prompt += (f"</tasks>\n")
 		
-		prompt += (f"<assistance_instructions>{self.config.assistant_instructions}</assistance_instructions>\n")
+		prompt += (f"<assistance_instructions>{self.config.assistant_instructions}</assistance_instructions> (be aware that,"
+		           f" when the instructions tell you, e.g. provide 3 actionable steps, that means all steps more than 3 will have 0 urgency.\n")
 		prompt += (f"Here is the chat you need for rating:\n<chat>{message.get_chat_context( config = self.config.summarization_config, minimum_number_of_messages = self.config.minimum_number_of_unchanged_messages)}</chat>\n")
 
 		

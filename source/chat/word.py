@@ -31,8 +31,8 @@ class Word(BaseModel):
 	"""
 	text: str = Field(..., description = "The text of the word.")
 	audio_stream: Optional[AudioStream] = Field(None, description = "The audio stream associated with this word. This is used to store the audio data of the word for further processing.")
-	start_time: Optional[datetime] = Field(None, description = "The start time of the word relative to the audio stream in seconds.")
-	end_time: Optional[datetime] = Field(None, description = "The end time of the word relative to the audio stream in seconds.")
+	start_time: Optional[datetime] = Field(None, description = "The start time of the word ") # ? relative to the audio stream in seconds. ? -> check
+	end_time: Optional[datetime] = Field(None, description = "The start time of the word ") # ? relative to the audio stream in seconds. ? -> check
 	
 	confidence: Optional[float] = Field(None, description = "The confidence score of the word recognition.")
 	senders_by_probability: Optional[dict[str, float]] = Field(

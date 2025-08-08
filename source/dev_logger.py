@@ -42,19 +42,34 @@ class DevLogger:
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
         self.logger.propagate = False
-
+        
         fmt = logging.Formatter("%(message)s")
+        
         if to_stdout:
-            sh = logging.StreamHandler(sys.stdout)
-            sh.setFormatter(fmt)
-            self.logger.addHandler(sh)
+            # add at most one stdout handler
+            has_stdout = any(
+                isinstance(h, logging.StreamHandler) and getattr(h, "stream", None) is sys.stdout
+                for h in self.logger.handlers
+            )
+            if not has_stdout:
+                sh = logging.StreamHandler(sys.stdout)
+                sh.setFormatter(fmt)
+                self.logger.addHandler(sh)
+        
         if to_file:
             if file_path is None:
                 raise ValueError("file_path must be supplied when to_file=True")
-            fh = logging.FileHandler(str(file_path), encoding="utf-8")
-            fh.setFormatter(fmt)
-            self.logger.addHandler(fh)
-
+            file_path = Path(file_path)
+            # add at most one FileHandler to the same path
+            has_file = any(
+                isinstance(h, logging.FileHandler) and Path(getattr(h, "baseFilename", "")) == file_path
+                for h in self.logger.handlers
+            )
+            if not has_file:
+                fh = logging.FileHandler(str(file_path), encoding = "utf-8")
+                fh.setFormatter(fmt)
+                self.logger.addHandler(fh)
+    
     # ──────────────────────────────────────────────────────────────────────── #
     # Internal helpers                                                       #
     # ──────────────────────────────────────────────────────────────────────── #

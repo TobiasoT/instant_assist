@@ -38,7 +38,7 @@ class AgenticTasksFactory:
 	async def create_new_agents(self, message: Message, llm: ChatOpenAI = None):
 		llm = llm or self.config.get_agent_creation_llm()
 		already_existing_tasks = self.agent_pool.get_already_existing_tasks()
-		
+		debug(self.config.assistant_instructions)
 		prompt = ""
 		prompt += (f"you create agent tasks according to the assistance_instructions taking_into_account_the_context_and_the_chat.\n")
 		prompt += (f"<assistance_instructions>{self.config.assistant_instructions}</assistance_instructions>\n")

@@ -13,6 +13,8 @@
    ```
    Fill in your actual API keys for:
    - `LIVEKIT_WS_URL` - Your LiveKit WebSocket URL
+   - `LIVEKIT_API_KEY` - Your LiveKit API key
+   - `LIVEKIT_API_SECRET` - Your LiveKit API secret
    - `ASSEMBLYAI_API_KEY` - AssemblyAI API key for transcription
    - `GEMINI_API_KEY` - Google Gemini API key
    - `OPENAI_API_KEY` - OpenAI API key for embeddings and LLM
@@ -34,6 +36,8 @@ docker build -t ai-app .
 docker run -d \
   -p 8000:8000 -p 8080:8080 \
   -e LIVEKIT_WS_URL="wss://your-instance.livekit.cloud" \
+  -e LIVEKIT_API_KEY="your_key" \
+  -e LIVEKIT_API_SECRET="your_key" \
   -e ASSEMBLYAI_API_KEY="your_key" \
   -e GEMINI_API_KEY="your_key" \
   -e OPENAI_API_KEY="your_key" \

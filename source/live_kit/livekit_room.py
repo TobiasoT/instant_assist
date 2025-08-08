@@ -7,7 +7,8 @@ import numpy as np
 from livekit.rtc import Room, TrackKind
 from livekit.rtc.audio_stream import AudioStream  # AsyncIterator[AudioFrameEvent]
 
-from source.custom_assembly_ai_multi_client import CustomAssemblyAiMultiClientFactory, global_custom_assembly_ai_multi_client_factory
+from source.custom_assembly_ai_multi_client import CustomAssemblyAiMultiClientFactory
+from source.global_instances.custom_assembly_ai_multi_client_factory import global_custom_assembly_ai_multi_client_factory
 from source.dev_logger import debug
 from source.live_kit.generate_livekit_token import make_token
 from source.locations_and_config import (  config,
@@ -23,7 +24,7 @@ class LiveKitRoom:
 		self.live_kit_url = live_kit_url
 		self.live_kit_token = live_kit_token
 		# self._setup(self.room)
-		debug(f"[LiveKit] Initialized LiveKitRoom with URL: {self.live_kit_url}, Token: {self.live_kit_token}")
+		# debug(f"[LiveKit] Initialized LiveKitRoom with URL: {self.live_kit_url}, Token: {self.live_kit_token}")
 		
 	@classmethod
 	async def create(cls, live_kit_url: str, live_kit_jwt: str) -> LiveKitRoom:

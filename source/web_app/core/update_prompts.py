@@ -3,13 +3,14 @@ from __future__ import annotations
 from asyncio import Lock
 from typing import Annotated
 
+from dataclasses_json import global_config
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
-
-
+from source.dev_logger import debug
+from source.global_instances.agents_config import global_agents_config
 
 # In-memory preset store
 _PRESET_LIMIT = 20
@@ -22,6 +23,9 @@ prompts_lock = Lock()
 def _update_prompts(new_prompt: str) -> list[str]:
     """Move prompt to front, dedupe, cap length."""
     new = new_prompt.strip()
+    debug(new)
+    global_agents_config.set_assistant_instructions(new)
+    debug(new)
     if not new:
         return prompts
     # move-to-front dedupe
